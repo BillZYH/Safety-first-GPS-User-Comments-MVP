@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+
+<html class="w-full h-full overflow-hidden" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Safety-first GPS — Compare Routes</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #DCE2E9;
+    -webkit-font-smoothing: antialiased;
+  }
+  .noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+  .noscroll::-webkit-scrollbar { display: none; }
+  svg text { font-family: inherit; }
+  .inc-marker { cursor: pointer; }
+</style>
+</head>
+<body class="w-full h-full m-0 overflow-hidden flex items-center justify-center">
+<div class="w-full h-full max-w-[393px] max-h-[852px] bg-[#F4F6F9] flex flex-col overflow-hidden relative shadow-2xl">
+<header class="shrink-0 bg-[#0B1B34] px-4 pt-3 pb-3">
+<div class="flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<a class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0" href="home.html">
+<iconify-icon class="text-white text-[18px]" icon="mdi:arrow-left"></iconify-icon>
+</a>
+<div class="min-w-0">
+<p class="text-white text-[15px] font-bold leading-tight truncate">Compare Routes</p>
+<p class="text-[10px] text-slate-400 leading-tight truncate">Step 2 · Fastest vs safer alternative</p>
+</div>
+</div>
+<span class="shrink-0 text-[9px] font-bold tracking-wide px-2 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30">DEMO MODE</span>
+</div>
+</header>
+<main class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden noscroll">
+<!-- Trip bar -->
+<section class="px-4 pt-4">
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-3 py-3">
+<div class="flex items-start justify-between gap-2">
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-[#0B1B34] shrink-0"></span>
+<p class="text-[12px] font-semibold text-slate-800 truncate" id="tripFrom"></p>
+</div>
+<div class="ml-1 my-0.5 border-l-2 border-dotted border-slate-300 h-3"></div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-[#059669] shrink-0"></span>
+<p class="text-[12px] font-semibold text-slate-800 truncate" id="tripTo"></p>
+</div>
+</div>
+<a class="shrink-0 text-[10px] font-bold text-[#047857] bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1.5" href="home.html">Edit trip</a>
+</div>
+<p class="text-[10px] text-slate-400 mt-2" id="tripMeta"></p>
+</div>
+</section>
+<!-- Map -->
+<section class="px-4 mt-3">
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+<div class="px-3 py-2 flex items-center justify-between border-b border-slate-100">
+<p class="text-[12px] font-bold text-slate-700">Both routes on one map</p>
+<span class="text-[9px] text-slate-400">Schematic · not to scale</span>
+</div>
+<div class="relative">
+<div class="h-[280px] bg-[#E9EEF3]" id="mapWrap"></div>
+<div class="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1.5" id="mapLegend"></div>
+</div>
+</div>
+</section>
+<!-- Chooser -->
+<section class="px-4 mt-4" id="chooser"></section>
+<!-- Evidence -->
+<section class="px-4 mt-4" id="evidence"></section>
+<!-- Action -->
+<section class="px-4 mt-4">
+<button class="w-full flex items-center justify-center gap-2 border border-slate-300 bg-white text-slate-800 text-[13px] font-bold rounded-xl py-3" id="whyBtn">
+<iconify-icon class="text-[17px] text-[#047857]" icon="mdi:help-circle-outline"></iconify-icon>
+        Why this route?
+      </button>
+<button class="w-full mt-2 flex items-center justify-center gap-2 bg-[#059669] text-white text-[14px] font-bold rounded-xl py-3.5" id="startBtn">
+<iconify-icon class="text-[18px]" icon="mdi:navigation-variant-outline"></iconify-icon>
+        Start Navigation
+      </button>
+<p class="text-[10px] text-slate-400 mt-2 leading-relaxed text-center" id="startNote"></p>
+</section>
+<!-- Disclaimer -->
+<section class="px-4 mt-4 pb-6">
+<div class="rounded-2xl bg-[#0B1B34] px-4 py-3">
+<div class="flex items-start gap-2">
+<iconify-icon class="text-[16px] text-slate-400 mt-0.5 shrink-0" icon="mdi:information-outline"></iconify-icon>
+<p class="text-[11px] text-slate-300 leading-relaxed">Based on user-submitted experiences and feedback. Reviews are subjective, may be unverified, incomplete, or outdated. A recommended route does not guarantee safety.</p>
+</div>
+</div>
+</section>
+</main>
+<nav class="shrink-0 bg-white border-t border-slate-200 px-1 pt-1 pb-1.5">
+<div class="grid grid-cols-4">
+<a class="flex flex-col items-center gap-0.5 py-1.5 rounded-xl text-slate-400" href="home.html">
+<iconify-icon class="text-[21px]" icon="mdi:map-marker-radius"></iconify-icon>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-0.5 py-1.5 rounded-xl text-[#047857]" href="routes.html">
+<iconify-icon class="text-[21px]" icon="mdi:routes"></iconify-icon>
+<span class="text-[10px] font-bold">Routes</span>
+</a>
+<a class="flex flex-col items-center gap-0.5 py-1.5 rounded-xl text-slate-400" href="safety-data.html">
+<iconify-icon class="text-[21px]" icon="mdi:database-eye-outline"></iconify-icon>
+<span class="text-[10px] font-medium">Safety Data</span>
+</a>
+<a class="flex flex-col items-center gap-0.5 py-1.5 rounded-xl text-slate-400" href="news.html">
+<iconify-icon class="text-[21px]" icon="mdi:comment-text-multiple-outline"></iconify-icon>
+<span class="text-[10px] font-medium">Community Reviews</span>
+</a>
+</div>
+</nav>
+<!-- Why this route modal -->
+<div class="absolute inset-0 z-40 bg-slate-900/50 p-4 flex items-end" id="whyModal" style="display:none">
+<div class="w-full bg-white rounded-2xl overflow-hidden max-h-[90%] flex flex-col">
+<div class="px-4 pt-4 pb-3 border-b border-slate-100 flex items-start justify-between gap-3">
+<div>
+<p class="text-[10px] font-bold text-[#047857] uppercase tracking-wide">Safety details</p>
+<h3 class="text-[14px] font-bold text-slate-900 mt-1">Why this route?</h3>
+</div>
+<button class="shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center" id="whyClose">
+<iconify-icon class="text-[18px] text-slate-500" icon="mdi:close"></iconify-icon>
+</button>
+</div>
+<div class="px-4 py-3 overflow-y-auto noscroll" id="whyBody"></div>
+</div>
+</div>
+<!-- Evidence modal -->
+<div class="absolute inset-0 z-40 bg-slate-900/50 p-4 flex items-end" id="evidenceModal" style="display:none">
+<div class="w-full bg-white rounded-2xl overflow-hidden max-h-[88%] flex flex-col">
+<div class="px-4 pt-4 pb-3 border-b border-slate-100 flex items-start justify-between gap-3">
+<div>
+<p class="text-[10px] font-bold text-[#DC2626] uppercase tracking-wide">Sample user review</p>
+<h3 class="text-[14px] font-bold text-slate-900 mt-1 leading-snug" id="evTitle"></h3>
+</div>
+<button class="shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center" id="evClose">
+<iconify-icon class="text-[18px] text-slate-500" icon="mdi:close"></iconify-icon>
+</button>
+</div>
+<div class="px-4 py-3 overflow-y-auto noscroll" id="evBody"></div>
+<div class="px-4 py-3 border-t border-slate-100">
+<button class="w-full text-[13px] font-bold text-white bg-[#0B1B34] rounded-xl py-2.5" id="evRead">View Comment</button>
+</div>
+</div>
+</div>
+<div class="absolute inset-0 z-50 bg-slate-900/60 p-4 flex items-end" id="sourceModal" style="display:none">
+<div class="w-full bg-white rounded-2xl overflow-hidden">
+<div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+<p class="text-[13px] font-bold text-slate-900">Review provenance</p>
+<button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center" id="srcClose">
+<iconify-icon class="text-[16px] text-slate-500" icon="mdi:close"></iconify-icon>
+</button>
+</div>
+<div class="px-4 py-3" id="srcBody"></div>
+</div>
+</div>
+</div>
+<script src="reviews-data.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var DEMOS = {
+    d1: {
+      id: 'd1',
+      from: 'Bugis MRT Station', shortFrom: 'Bugis MRT',
+      to: 'Singapore Management University', shortTo: 'SMU',
+      area: 'Bugis / Bras Basah',
+      fromPt: [320, 390], toPt: [680, 110],
+      hRoads: [
+        { y: 110, name: 'Bugis Street' }, { y: 250, name: 'North Bridge Road' },
+        { y: 390, name: 'Victoria Street' }, { y: 530, name: 'Beach Road' }
+      ],
+      vRoads: [
+        { x: 320, name: 'Ophir Road' }, { x: 500, name: 'Middle Road' },
+        { x: 680, name: 'Bras Basah Road' }, { x: 860, name: 'Prinsep Street' }
+      ],
+      pois: [
+        { x: 390, y: 180, name: 'Bugis Junction' },
+        { x: 760, y: 440, name: 'National Library' }
+      ],
+      fastest: {
+        pts: [[320, 390], [680, 390], [680, 110]], km: '1.0', min: 13,
+        reason: 'Most direct footway — straight along Victoria Street, then north along Bras Basah Road.',
+        streets: ['Victoria Street', 'Bras Basah Road']
+      },
+      safer: {
+        pts: [[320, 390], [320, 250], [860, 250], [860, 110], [680, 110]], km: '1.3', min: 17,
+        reason: 'Demo scenario: fictional reviews contrast lighting on two illustrated corridors. No real-world safety conclusion is supported.',
+        streets: ['Ophir Road', 'North Bridge Road', 'Prinsep Street'],
+        extraKm: '+0.3 km', extraMin: '+4 min'
+      },
+      insufficient: false
+    },
+    d2: {
+      id: 'd2',
+      from: 'Orchard MRT Station', shortFrom: 'Orchard MRT',
+      to: 'Fort Canning Park', shortTo: 'Fort Canning Park',
+      area: 'Orchard / Fort Canning',
+      fromPt: [140, 110], toPt: [680, 530],
+      hRoads: [
+        { y: 110, name: 'Orchard Road' }, { y: 250, name: 'Penang Road' },
+        { y: 390, name: 'Killiney Road' }, { y: 530, name: 'Fort Canning Road' }
+      ],
+      vRoads: [
+        { x: 320, name: 'Clemenceau Avenue' }, { x: 500, name: 'Penang Lane' },
+        { x: 680, name: 'Fort Canning Link' }, { x: 860, name: 'River Valley Road' }
+      ],
+      pois: [
+        { x: 390, y: 180, name: 'Somerset MRT' },
+        { x: 760, y: 440, name: 'Fort Canning Centre' }
+      ],
+      fastest: {
+        pts: [[140, 110], [500, 110], [500, 530], [680, 530]], km: '1.4', min: 18,
+        reason: 'Shortest distance — Orchard Road, then Penang Lane down to Fort Canning Road.',
+        streets: ['Orchard Road', 'Penang Lane', 'Fort Canning Road']
+      },
+      safer: {
+        pts: [[140, 110], [320, 110], [320, 250], [860, 250], [860, 530], [680, 530]], km: '1.7', min: 22,
+        reason: 'Demo scenario only: sample comments describe a busier alternative corridor; real-world safety is unverified.',
+        streets: ['Clemenceau Avenue', 'Penang Road', 'River Valley Road'],
+        extraKm: '+0.3 km', extraMin: '+4 min'
+      },
+      insufficient: false
+    },
+    d3: {
+      id: 'd3',
+      from: 'Tampines MRT Station', shortFrom: 'Tampines MRT',
+      to: 'Our Tampines Hub', shortTo: 'Our Tampines Hub',
+      area: 'Tampines',
+      fromPt: [320, 110], toPt: [680, 530],
+      hRoads: [
+        { y: 110, name: 'Tampines Central 1' }, { y: 250, name: 'Tampines Avenue 5' },
+        { y: 390, name: 'Tampines Avenue 4' }, { y: 530, name: 'Tampines Avenue 7' }
+      ],
+      vRoads: [
+        { x: 320, name: 'Tampines Central 5' }, { x: 500, name: 'Tampines Mall Link' },
+        { x: 680, name: 'Tampines Avenue 2' }, { x: 860, name: 'Tampines Avenue 9' }
+      ],
+      pois: [
+        { x: 390, y: 180, name: 'Tampines Mall' },
+        { x: 760, y: 440, name: 'Tampines Polyclinic' }
+      ],
+      fastest: {
+        pts: [[320, 110], [320, 390], [680, 390], [680, 530]], km: '1.1', min: 14,
+        reason: 'Most direct — south on Tampines Central 5, then east along Tampines Avenue 4.',
+        streets: ['Tampines Central 5', 'Tampines Avenue 4', 'Tampines Avenue 2']
+      },
+      safer: {
+        pts: [[320, 110], [860, 110], [860, 530], [680, 530]], km: '1.5', min: 19,
+        reason: 'Demo scenario: fictional reviews contrast visibility on two illustrated corridors. No real-world safety conclusion is supported.',
+        streets: ['Tampines Central 1', 'Tampines Avenue 9', 'Tampines Avenue 7'],
+        extraKm: '+0.4 km', extraMin: '+5 min'
+      },
+      insufficient: false
+    },
+    d4: {
+      id: 'd4',
+      from: 'Jurong East MRT Station', shortFrom: 'Jurong East MRT',
+      to: 'Jurong Lake Gardens', shortTo: 'Jurong Lake Gardens',
+      area: 'Jurong East',
+      fromPt: [320, 110], toPt: [860, 530],
+      hRoads: [
+        { y: 110, name: 'Jurong Gateway Road' }, { y: 250, name: 'Boon Lay Way' },
+        { y: 390, name: 'Jurong Town Hall Road' }, { y: 530, name: 'Lakeside Drive' }
+      ],
+      vRoads: [
+        { x: 320, name: 'Jem Link' }, { x: 500, name: 'Gateway Link' },
+        { x: 680, name: 'Jurong East Street 13' }, { x: 860, name: 'Corporation Road' }
+      ],
+      pois: [
+        { x: 390, y: 180, name: 'JEM' },
+        { x: 760, y: 440, name: 'Lakeside MRT' }
+      ],
+      fastest: {
+        pts: [[320, 110], [680, 110], [680, 530], [860, 530]], km: '1.6', min: 20,
+        reason: 'Direct route via Jurong Gateway Road and Jurong East Street 13.',
+        streets: ['Jurong Gateway Road', 'Jurong East Street 13', 'Lakeside Drive']
+      },
+      safer: null,
+      insufficient: true
+    }
+  };
+
+  var NEWS = window.SFGPS_REVIEWS;
+
+  var SOURCE_INDEX = {};
+
+  var DATA_UPDATED = '11 Oct 2026, 09:20 SGT';
+  var CONTACT = { name: 'Trusted contact not configured', phone: 'Not set' };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function show(el, d) { if (el) el.style.display = d || 'block'; }
+  function hide(el) { if (el) el.style.display = 'none'; }
+
+  var activeId = 'd1';
+  var chosen = 'safer';
+
+  function incidentsFor(id) {
+    return NEWS.filter(function (n) { return n.demo === id && n.x !== null; });
+  }
+
+  /* ---------------- Map ---------------- */
+
+  function ptsToPath(pts) {
+    return 'M ' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L ');
+  }
+
+  function buildMap(demo, highlight) {
+    var s = '';
+    s += '<svg viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet" class="w-full h-full block">';
+    s += '<rect x="0" y="0" width="1000" height="640" fill="#E9EEF3"/>';
+    s += '<rect x="160" y="130" width="140" height="100" rx="18" fill="#D9E7DC"/>';
+    s += '<rect x="520" y="430" width="140" height="100" rx="18" fill="#D9E7DC"/>';
+    s += '<rect x="160" y="410" width="140" height="100" rx="18" fill="#E2E7ED"/>';
+    s += '<rect x="520" y="270" width="140" height="100" rx="18" fill="#E2E7ED"/>';
+    s += '<rect x="700" y="130" width="140" height="100" rx="18" fill="#E2E7ED"/>';
+    s += '<path d="M 0 596 C 220 566, 420 622, 640 588 C 780 566, 900 588, 1000 570 L 1000 640 L 0 640 Z" fill="#CFE4F2"/>';
+    demo.hRoads.forEach(function (r) {
+      s += '<line x1="40" y1="' + r.y + '" x2="960" y2="' + r.y + '" stroke="#D3DCE4" stroke-width="30" stroke-linecap="round"/>';
+    });
+    demo.vRoads.forEach(function (r) {
+      s += '<line x1="' + r.x + '" y1="60" x2="' + r.x + '" y2="592" stroke="#D3DCE4" stroke-width="30" stroke-linecap="round"/>';
+    });
+    demo.hRoads.forEach(function (r) {
+      s += '<line x1="40" y1="' + r.y + '" x2="960" y2="' + r.y + '" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round"/>';
+    });
+    demo.vRoads.forEach(function (r) {
+      s += '<line x1="' + r.x + '" y1="60" x2="' + r.x + '" y2="592" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round"/>';
+    });
+    demo.hRoads.forEach(function (r) {
+      s += '<text x="46" y="' + (r.y - 17) + '" font-size="16" font-weight="600" fill="#93A0AE">' + r.name + '</text>';
+    });
+    demo.vRoads.forEach(function (r) {
+      s += '<text x="' + r.x + '" y="46" font-size="16" font-weight="600" fill="#93A0AE" text-anchor="middle">' + r.name + '</text>';
+    });
+    demo.pois.forEach(function (p) {
+      s += '<circle cx="' + p.x + '" cy="' + p.y + '" r="7" fill="#FFFFFF" stroke="#9AA7B4" stroke-width="3"/>';
+      s += '<text x="' + (p.x + 14) + '" y="' + (p.y + 6) + '" font-size="16" font-weight="600" fill="#7E8B99">' + p.name + '</text>';
+    });
+
+    if (demo.fastest) {
+      s += '<path d="' + ptsToPath(demo.fastest.pts) + '" fill="none" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>';
+      s += '<path d="' + ptsToPath(demo.fastest.pts) + '" fill="none" stroke="#F59E0B" stroke-width="' + (highlight === 'fastest' ? 15 : 10) + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + (highlight === 'safer' ? 0.45 : 1) + '"/>';
+    }
+    if (demo.safer) {
+      s += '<path d="' + ptsToPath(demo.safer.pts) + '" fill="none" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>';
+      s += '<path d="' + ptsToPath(demo.safer.pts) + '" fill="none" stroke="#059669" stroke-width="' + (highlight === 'safer' ? 15 : 10) + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + (highlight === 'fastest' ? 0.45 : 1) + '"/>';
+    }
+
+    incidentsFor(demo.id).forEach(function (m) {
+      s += '<g class="inc-marker" data-inc="' + m.id + '">';
+      s += '<circle cx="' + m.x + '" cy="' + m.y + '" r="20" fill="#818CF8" opacity="0.20"/>';
+      s += '<circle cx="' + m.x + '" cy="' + m.y + '" r="13" fill="#6366F1" stroke="#FFFFFF" stroke-width="4"/>';
+      s += '<text x="' + m.x + '" y="' + (m.y + 6) + '" text-anchor="middle" font-size="18" font-weight="800" fill="#FFFFFF">✎</text>';
+      s += '</g>';
+    });
+
+    s += '<circle cx="' + demo.fromPt[0] + '" cy="' + demo.fromPt[1] + '" r="12" fill="#0B1B34" stroke="#FFFFFF" stroke-width="5"/>';
+    s += '<text x="' + demo.fromPt[0] + '" y="' + (demo.fromPt[1] - 26) + '" text-anchor="middle" font-size="21" font-weight="700" fill="#0B1B34" stroke="#FFFFFF" stroke-width="6" paint-order="stroke">' + demo.shortFrom + '</text>';
+    s += '<circle cx="' + demo.toPt[0] + '" cy="' + demo.toPt[1] + '" r="12" fill="#059669" stroke="#FFFFFF" stroke-width="5"/>';
+    s += '<text x="' + demo.toPt[0] + '" y="' + (demo.toPt[1] - 26) + '" text-anchor="middle" font-size="21" font-weight="700" fill="#047857" stroke="#FFFFFF" stroke-width="6" paint-order="stroke">' + demo.shortTo + '</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  /* ---------------- Render ---------------- */
+
+  function renderTrip(demo) {
+    $('tripFrom').textContent = demo.from;
+    $('tripTo').textContent = demo.to;
+    var n = incidentsFor(demo.id).length;
+    $('tripMeta').textContent = demo.area + ' · ' + n + ' location-linked record' + (n === 1 ? '' : 's') + ' within range';
+  }
+
+  function renderLegend(demo) {
+    var html = '';
+    var dot = function (c, t) {
+      return '<span class="flex items-center gap-1 bg-white/95 border border-slate-200 rounded-full px-2 py-1 text-[9px] font-semibold text-slate-600"><span class="w-2.5 h-2.5 rounded-full" style="background:' + c + '"></span>' + t + '</span>';
+    };
+    html += dot('#F59E0B', 'Fastest Route');
+    if (demo.safer) html += dot('#059669', 'Demo Alternative Route');
+    if (incidentsFor(demo.id).length) html += dot('#DC2626', 'Sample user review');
+    $('mapLegend').innerHTML = html;
+  }
+
+  function renderChooser(demo) {
+    var el = $('chooser');
+    var html = '';
+    html += '<h2 class="text-[14px] font-bold text-slate-900 mb-2">Choose a route</h2>';
+
+    if (demo.insufficient) {
+      html += card(demo, 'fastest', true);
+      html += '<div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">';
+      html += '<div class="flex items-start gap-2">';
+      html += '<iconify-icon icon="mdi:alert-outline" class="text-[18px] text-amber-600 mt-0.5 shrink-0"></iconify-icon>';
+      html += '<div><p class="text-[13px] font-bold text-amber-900">Insufficient user feedback to compare route safety</p>';
+      html += '<p class="text-[11px] text-amber-800 mt-1 leading-relaxed">No location-linked sample reviews were found near either candidate corridor for this trip, so no alternative can be recommended. This does not mean the route is safe — no reviews does not mean no risk.</p>';
+      html += '<a href="safety-data.html" class="inline-flex items-center gap-1 mt-2 text-[11px] font-bold text-amber-900 underline">Review coverage and known gaps<iconify-icon icon="mdi:arrow-right" class="text-[13px]"></iconify-icon></a>';
+      html += '</div></div></div>';
+      el.innerHTML = html;
+      return;
+    }
+
+    html += card(demo, 'fastest', chosen === 'fastest');
+    html += '<div class="mt-2"></div>';
+    html += card(demo, 'safer', chosen === 'safer');
+    html += '<p class="text-[10px] text-slate-400 mt-2 leading-relaxed">Tap a route to select it. Times and distances are schematic estimates for Demo Mode and are not calculated from live routing data.</p>';
+    el.innerHTML = html;
+  }
+
+  function card(demo, kind, selected) {
+    var r = demo[kind];
+    if (!r) return '';
+    var isFast = kind === 'fastest';
+    var color = isFast ? '#F59E0B' : '#059669';
+    var incs = incidentsFor(demo.id);
+    var html = '';
+    html += '<button data-route="' + kind + '" class="w-full text-left rounded-2xl border bg-white shadow-sm overflow-hidden ' +
+      (selected ? (isFast ? 'border-[#F59E0B] ring-2 ring-amber-100' : 'border-[#059669] ring-2 ring-emerald-100') : 'border-slate-200') + '">';
+    html += '<div class="px-3 pt-3 flex items-start justify-between gap-2">';
+    html += '<div class="flex items-center gap-2 min-w-0">';
+    html += '<span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style="background:' + (isFast ? '#FEF3C7' : '#D1FAE5') + '">';
+    html += '<iconify-icon icon="' + (isFast ? 'mdi:flash-outline' : 'mdi:shield-check-outline') + '" class="text-[17px]" style="color:' + (isFast ? '#B45309' : '#047857') + '"></iconify-icon></span>';
+    html += '<div class="min-w-0"><p class="text-[13px] font-bold text-slate-900 leading-tight">' + (isFast ? 'Fastest Route' : 'Demo Alternative Route') + '</p>';
+    html += '<p class="text-[10px] text-slate-400 mt-0.5">' + r.streets.join(' · ') + '</p></div>';
+    html += '</div>';
+    html += '<span class="shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center" style="border-color:' + (selected ? color : '#CBD5E1') + '">';
+    if (selected) html += '<span class="w-2.5 h-2.5 rounded-full" style="background:' + color + '"></span>';
+    html += '</span>';
+    html += '</div>';
+    html += '<div class="px-3 mt-2 flex items-end gap-3">';
+    html += '<p class="text-[26px] font-extrabold leading-none" style="color:' + color + '">' + r.min + '<span class="text-[12px] font-bold ml-0.5">min</span></p>';
+    html += '<p class="text-[12px] text-slate-500 pb-0.5">' + r.km + ' km walk</p>';
+    if (!isFast && r.extraMin) html += '<p class="ml-auto text-[10px] font-bold text-slate-500 pb-0.5">' + r.extraMin + ' · ' + r.extraKm + '</p>';
+    html += '</div>';
+    html += '<p class="px-3 mt-2 text-[11px] text-slate-600 leading-relaxed">' + r.reason + '</p>';
+    html += '<div class="px-3 mt-2 pb-3 flex flex-wrap gap-1">';
+    if (isFast && incs.length) {
+      html += '<span class="text-[9px] font-bold text-red-700 bg-red-50 border border-red-100 rounded-md px-1.5 py-0.5">' + incs.length + ' sample review location' + (incs.length > 1 ? 's' : '') + ' nearby</span>';
+    }
+    if (!isFast) {
+      html += '<span class="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-md px-1.5 py-0.5">Demo comparison · ' + incs.length + ' sample feedback segment' + (incs.length > 1 ? 's' : '') + '</span>';
+    }
+    html += '<span class="text-[9px] font-semibold text-slate-500 bg-slate-100 rounded-md px-1.5 py-0.5">Demo estimate</span>';
+    html += '</div></button>';
+    return html;
+  }
+
+  function renderEvidence(demo) {
+    var el = $('evidence');
+    var incs = incidentsFor(demo.id);
+    var html = '';
+    html += '<div class="flex items-center justify-between gap-2 mb-2">';
+    html += '<h2 class="text-[14px] font-bold text-slate-900">Community reviews near these routes</h2>';
+    html += '<a href="news.html" class="text-[10px] font-bold text-[#047857] truncate">All reviews<iconify-icon icon="mdi:chevron-right" class="text-[12px]"></iconify-icon></a>';
+    html += '</div>';
+
+    if (!incs.length) {
+      html += '<div class="rounded-2xl border border-slate-200 bg-white p-4">';
+      html += '<div class="flex items-start gap-2">';
+      html += '<iconify-icon icon="mdi:map-search-outline" class="text-[18px] text-slate-400 mt-0.5 shrink-0"></iconify-icon>';
+      html += '<div><p class="text-[12px] font-bold text-slate-700">No location-linked sample reviews found</p>';
+      html += '<p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Nothing in the available sources sits near either candidate corridor. This is a coverage gap, not a safety signal.</p></div>';
+      html += '</div></div>';
+      el.innerHTML = html;
+      return;
+    }
+
+    html += '<div class="rounded-2xl border border-slate-200 bg-white overflow-hidden divide-y divide-slate-100">';
+    incs.forEach(function (m) {
+      html += '<div class="p-3">';
+      html += '<div class="flex items-start justify-between gap-2">';
+      html += '<span class="text-[9px] font-bold rounded-full px-2 py-0.5 bg-red-50 text-red-700 border border-red-100">' + m.type + '</span>';
+      html += '<span class="text-[9px] font-bold rounded-full px-2 py-0.5 bg-slate-100 text-slate-500">Sample User Review</span>';
+      html += '</div>';
+      html += '<p class="text-[12px] font-bold text-slate-900 mt-1.5 leading-snug">' + m.title + '</p>';
+      html += '<p class="text-[11px] text-slate-500 mt-1 leading-relaxed">' + m.location + ' · <span class="text-amber-700 font-semibold">Approximate location</span></p>';
+      html += '<p class="text-[10px] text-slate-400 mt-1">Experience ' + m.experienceDate + ' · Published ' + m.publishedDate + ' · ' + m.source + '</p>';
+      html += '<div class="mt-2 flex gap-2">';
+      html += '<button data-open="' + m.id + '" class="flex-1 text-[11px] font-bold text-slate-700 border border-slate-200 rounded-lg py-1.5">View evidence</button>';
+      html += '<button data-src="' + m.id + '" class="flex-1 text-[11px] font-bold text-[#047857] bg-emerald-50 border border-emerald-100 rounded-lg py-1.5">View Comment</button>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+    html += '<p class="text-[10px] text-slate-400 mt-2 leading-relaxed">Items are historical and location-approximate. They are shown as context, not as a claim that the area is currently unsafe.</p>';
+    el.innerHTML = html;
+  }
+
+  function render() {
+    var demo = DEMOS[activeId];
+    renderTrip(demo);
+    $('mapWrap').innerHTML = buildMap(demo, chosen);
+    renderLegend(demo);
+    renderChooser(demo);
+    renderEvidence(demo);
+    $('startNote').textContent = demo.insufficient
+      ? 'Starting navigation will preview the fastest route only. No safer route is recommended for this trip.'
+      : 'Prototype: navigation is not connected yet, so the next screen opens in Navigation Preview.';
+  }
+
+  /* ---------------- Modals ---------------- */
+
+  function openEvidence(id) {
+    var m = NEWS.filter(function (n) { return n.id === id; })[0];
+    if (!m) return;
+    $('evTitle').textContent = m.title;
+    var html = '';
+    html += '<div class="flex flex-wrap gap-1.5">';
+    html += '<span class="text-[10px] font-bold rounded-full px-2 py-1 bg-red-50 text-red-700 border border-red-100">' + m.type + '</span>';
+    html += '<span class="text-[10px] font-bold rounded-full px-2 py-1 bg-slate-100 text-slate-600">Sample User Review</span>';
+    html += '<span class="text-[10px] font-bold rounded-full px-2 py-1 bg-amber-50 text-amber-800 border border-amber-100">Approximate location</span>';
+    html += '<span class="text-[10px] font-bold rounded-full px-2 py-1 bg-violet-50 text-violet-700 border border-violet-100">Sample User Review</span>';
+    html += '</div>';
+    html += '<p class="text-[12px] text-slate-600 mt-3 leading-relaxed">' + m.summary + '</p>';
+    html += '<dl class="mt-3 divide-y divide-slate-100 border-t border-slate-100">';
+    var row = function (k, v) {
+      return '<div class="flex items-start justify-between gap-3 py-2"><dt class="text-[11px] text-slate-400 shrink-0">' + k + '</dt><dd class="text-[11px] font-semibold text-slate-700 text-right">' + v + '</dd></div>';
+    };
+    html += row('Location', m.location);
+    html += row('Area', m.area);
+    html += row('Experience date', m.experienceDate);
+    html += row('Published', m.publishedDate);
+    html += row('Source', m.source);
+    html += '</dl>';
+    html += '<p class="text-[10px] text-slate-400 mt-3 leading-relaxed">The marker shows an approximate area and must not be read as an exact address.</p>';
+    $('evBody').innerHTML = html;
+    $('evRead').setAttribute('data-inc', m.id);
+    show($('evidenceModal'), 'flex');
+  }
+
+  function openSource(id) {
+    var m = NEWS.find(function (n) { return n.id === id; });
+    if (!m) return;
+    $('srcBody').innerHTML = '<p class="text-[12px] font-bold text-slate-900">Sample User Review</p><p class="text-[11px] text-slate-600 mt-2">' + m.comment + '</p><p class="text-[11px] text-slate-500 mt-2">Anonymous User · ' + m.location + ' · Experience: ' + m.experienceDate + ' · Published: ' + m.publishedDate + '</p><p class="text-[11px] text-amber-800 mt-3">Fictional A/B test fixture. Not a real user submission. Approximate diagram location; not geographic coordinates.</p>';
+    show($('sourceModal'), 'flex');
+  }
+
+  function openWhy() {
+    var demo = DEMOS[activeId];
+    var incs = incidentsFor(demo.id);
+    var r = demo.safer && chosen === 'safer' ? demo.safer : demo.fastest;
+    var html = '';
+
+    if (demo.insufficient) {
+      html += '<div class="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">';
+      html += '<p class="text-[12px] font-bold text-amber-900">Insufficient user feedback to compare route safety</p>';
+      html += '<p class="text-[11px] text-amber-800 mt-1 leading-relaxed">There is no evidence base for a comparison on this trip, so the app makes no recommendation. You are seeing the fastest route on its own.</p>';
+      html += '</div>';
+    } else {
+      html += '<p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Demo comparison scenario</p>';
+      html += '<p class="text-[12px] text-slate-700 mt-1 leading-relaxed">' + (r === demo.safer ? demo.safer.reason : demo.fastest.reason) + '</p>';
+      html += '<div class="mt-3 grid grid-cols-3 gap-2">';
+      html += '<div class="rounded-xl bg-slate-50 border border-slate-200 px-2 py-2 text-center"><p class="text-[15px] font-extrabold text-slate-900">' + r.min + '</p><p class="text-[9px] text-slate-400 font-semibold">MINUTES</p></div>';
+      html += '<div class="rounded-xl bg-slate-50 border border-slate-200 px-2 py-2 text-center"><p class="text-[15px] font-extrabold text-slate-900">' + r.km + '</p><p class="text-[9px] text-slate-400 font-semibold">KM WALK</p></div>';
+      html += '<div class="rounded-xl bg-emerald-50 border border-emerald-100 px-2 py-2 text-center"><p class="text-[15px] font-extrabold text-[#047857]">' + (r === demo.safer ? (r.extraMin || '0') : '0') + '</p><p class="text-[9px] text-emerald-700 font-semibold">ADDED TIME</p></div>';
+      html += '</div>';
+      html += '<p class="text-[10px] text-slate-400 mt-2 leading-relaxed">Added cost versus the fastest route: ' + (r === demo.safer ? (r.extraMin || '') + ' · ' + (r.extraKm || '') : 'none — this is the fastest route') + '.</p>';
+    }
+
+    html += '<p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mt-4">Community feedback used</p>';
+    if (!incs.length) {
+      html += '<p class="text-[11px] text-slate-500 mt-1 leading-relaxed">No location-linked sample reviews were found near this trip. Absence of reports is not evidence of safety.</p>';
+    } else {
+      html += '<div class="mt-2 space-y-2">';
+      incs.forEach(function (m) {
+        html += '<div class="rounded-xl border border-slate-200 px-3 py-2">';
+        html += '<div class="flex items-start justify-between gap-2">';
+        html += '<p class="text-[11px] font-bold text-slate-800 leading-snug">' + m.title + '</p>';
+        html += '<span class="shrink-0 text-[9px] font-bold rounded-full px-2 py-0.5 bg-red-50 text-red-700 border border-red-100">' + m.type + '</span>';
+        html += '</div>';
+        html += '<p class="text-[10px] text-slate-400 mt-1">' + m.experienceDate + ' · ' + m.area + ' · ' + m.source + ' · Approximate location</p>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<div class="mt-4 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2">';
+    html += '<p class="text-[10px] text-slate-500">Sample fixture updated: <span class="font-semibold text-slate-700">' + DATA_UPDATED + '</span></p>';
+    html += '<p class="text-[10px] text-slate-500 mt-1">Route metrics: schematic Demo Mode estimates, not live routing output.</p>';
+    html += '</div>';
+
+    html += '<div class="mt-3 rounded-xl bg-[#0B1B34] px-3 py-2.5">';
+    html += '<p class="text-[11px] text-slate-300 leading-relaxed">Based on user-submitted experiences and feedback. Reviews are subjective, may be unverified, incomplete, or outdated. A recommended route does not guarantee safety.</p>';
+    html += '</div>';
+
+    html += '<p class="text-[10px] text-slate-400 mt-3 leading-relaxed">This feature compares sample feedbacks near candidate corridors. It does not predict crime and does not measure the safety of an area.</p>';
+
+    $('whyBody').innerHTML = html;
+    show($('whyModal'), 'flex');
+  }
+
+  /* ---------------- Events ---------------- */
+
+  function selectRoute(kind) {
+    chosen = kind;
+    try { localStorage.setItem('sfgps_route', kind); } catch (e) {}
+    render();
+  }
+
+  function startNav() {
+    try {
+      localStorage.setItem('sfgps_demo', activeId);
+      localStorage.setItem('sfgps_route', DEMOS[activeId].safer ? chosen : 'fastest');
+    } catch (e) {}
+    window.location.href = 'navigation.html';
+  }
+
+  $('chooser').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-route]');
+    if (b) selectRoute(b.getAttribute('data-route'));
+  });
+
+  $('evidence').addEventListener('click', function (e) {
+    var o = e.target.closest('[data-open]');
+    if (o) { openEvidence(o.getAttribute('data-open')); return; }
+    var s = e.target.closest('[data-src]');
+    if (s) openSource(s.getAttribute('data-src'));
+  });
+
+  $('mapWrap').addEventListener('click', function (e) {
+    var g = e.target.closest('[data-inc]');
+    if (g) openEvidence(g.getAttribute('data-inc'));
+  });
+
+  $('whyBtn').addEventListener('click', openWhy);
+  $('whyClose').addEventListener('click', function () { hide($('whyModal')); });
+  $('whyModal').addEventListener('click', function (e) { if (e.target === $('whyModal')) hide($('whyModal')); });
+
+  $('evClose').addEventListener('click', function () { hide($('evidenceModal')); });
+  $('evRead').addEventListener('click', function () { openSource(this.getAttribute('data-inc')); });
+  $('evidenceModal').addEventListener('click', function (e) { if (e.target === $('evidenceModal')) hide($('evidenceModal')); });
+  $('srcClose').addEventListener('click', function () { hide($('sourceModal')); });
+  $('sourceModal').addEventListener('click', function (e) { if (e.target === $('sourceModal')) hide($('sourceModal')); });
+  $('startBtn').addEventListener('click', startNav);
+
+  /* ---------------- Boot ---------------- */
+
+  try {
+    var savedDemo = localStorage.getItem('sfgps_demo');
+    if (savedDemo && DEMOS[savedDemo]) activeId = savedDemo;
+    var savedRoute = localStorage.getItem('sfgps_route');
+    if (savedRoute === 'fastest' || savedRoute === 'safer') chosen = savedRoute;
+  } catch (e) {}
+
+  if (!DEMOS[activeId].safer) chosen = 'fastest';
+  render();
+
+})();
+</script>
+</body>
+</html>
